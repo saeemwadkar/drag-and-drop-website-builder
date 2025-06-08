@@ -1,7 +1,6 @@
 const canvas = document.getElementById('canvas');
 const draggables = document.querySelectorAll('.draggable');
 let selectedElement = null;
-let offsetX, offsetY;
 
 draggables.forEach(el => {
     el.addEventListener('dragstart', e => {
@@ -34,7 +33,6 @@ canvas.addEventListener('drop', e => {
     el.style.cursor = 'move';
     el.style.padding = '5px';
     el.style.minWidth = '40px';
-    el.style.userSelect = 'none';
 
     if (type !== 'image') el.setAttribute('contenteditable', true);
 
@@ -56,14 +54,25 @@ canvas.addEventListener('drop', e => {
 
 function startDrag(e) {
     const el = e.currentTarget;
+    const canvasRect = canvas.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const resizeZone = 16;
+
+    if (e.offsetX > el.offsetWidth - resizeZone && e.offsetY > el.offsetHeight - resizeZone) return;
     if (e.target.classList.contains('delete-btn')) return;
 
-    offsetX = e.clientX - el.getBoundingClientRect().left;
-    offsetY = e.clientY - el.getBoundingClientRect().top;
+    const offsetX = e.clientX - elRect.left;
+    const offsetY = e.clientY - elRect.top;
 
     function moveAt(pageX, pageY) {
-        el.style.left = (pageX - canvas.getBoundingClientRect().left - offsetX) + 'px';
-        el.style.top = (pageY - canvas.getBoundingClientRect().top - offsetY) + 'px';
+        let newLeft = pageX - canvasRect.left - offsetX;
+        let newTop = pageY - canvasRect.top - offsetY;
+
+        newLeft = Math.max(0, Math.min(newLeft, canvas.clientWidth - el.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, canvas.clientHeight - el.offsetHeight));
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
     }
 
     function onMouseMove(e) {
@@ -71,7 +80,6 @@ function startDrag(e) {
     }
 
     document.addEventListener('mousemove', onMouseMove);
-
     document.addEventListener('mouseup', function stopDrag() {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', stopDrag);
@@ -119,4 +127,3 @@ document.getElementById('propertiesForm').addEventListener('input', () => {
         selectedElement.style.backgroundColor = bgColor;
     }
 });
-
